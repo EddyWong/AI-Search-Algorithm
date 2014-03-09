@@ -1,0 +1,533 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265
+{\fonttbl\f0\fnil\fcharset0 Monaco;}
+{\colortbl;\red255\green255\blue255;\red127\green0\blue85;\red0\green0\blue192;\red63\green127\blue95;
+\red42\green0\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720
+
+\f0\fs22 \cf2 import\cf0  java.io.File;\
+\cf2 import\cf0  java.io.FileReader;\
+\cf2 import\cf0  java.io.FileWriter;\
+\cf2 import\cf0  java.io.IOException;\
+\cf2 import\cf0  java.util.ArrayDeque;\
+\cf2 import\cf0  java.util.ArrayList;\
+\cf2 import\cf0  java.util.HashMap;\
+\cf2 import\cf0  java.util.Iterator;\
+\cf2 import\cf0  java.util.Map;\
+\cf2 import\cf0  java.util.Queue;\
+\cf2 import\cf0  java.util.Scanner;\
+\cf2 import\cf0  java.util.Set;\
+\cf2 import\cf0  java.util.Comparator;\
+\
+\cf2 class\cf0  Person\{\
+	String \cf3 name\cf0 ;\
+	String \cf3 parentNode\cf0 =\cf2 null\cf0 ;\
+	\cf2 int\cf0  \cf3 group\cf0 ;\
+	\cf2 float\cf0  \cf3 length\cf0 ;\
+	HashMap<String, Integer> \cf3 order\cf0 ;\
+	HashMap<Person,Float> \cf3 friends\cf0 ;\
+	ArrayList<String> \cf3 friendList\cf0 ;\
+	\cf2 public\cf0  Person(String Pname)\{\
+		\cf3 name\cf0 =Pname;\
+		\cf3 length\cf0 =0;\
+		\cf3 friends\cf0  = \cf2 new\cf0  HashMap<Person,Float>();\
+		\cf3 friendList\cf0  = \cf2 new\cf0  ArrayList<String>();\
+	\}\
+\}\
+\cf2 class\cf0  costComparator \cf2 implements\cf0  Comparator<Person>\{\
+	\cf2 public\cf0  \cf2 int\cf0  compare(Person a, Person b)\{\
+		\cf2 if\cf0 ( Math.abs(a.\cf3 length\cf0  - b.\cf3 length\cf0  ) > 1e-3 )\
+			\cf2 if\cf0 ( a.\cf3 length\cf0  < b.\cf3 length\cf0  ) \cf2 return\cf0  -1;\
+			\cf2 else\cf0  \cf2 return\cf0  1;\
+		\cf2 if\cf0 ( \ul WordOrder\ulnone .get < b.\cf3 name\cf0  ) \cf2 return\cf0  -1;\
+		\cf2 else\cf0  \cf2 return\cf0  1;\
+	\}\
+\}\
+\
+\cf2 public\cf0  \cf2 class\cf0  search \{\
+\cf2 static\cf0  HashMap<String, Person> \cf3 isExist\cf0  = \cf2 new\cf0  HashMap<String, Person>();\
+\cf2 static\cf0  HashMap<String, Integer> \cf3 WordOrder\cf0  = \cf2 new\cf0  HashMap<String, Integer>();\
+\cf2 private\cf0  \cf2 static\cf0  Scanner \cf3 scanner\cf0 ,\cf3 scanner1\cf0 ;\
+\cf2 static\cf0  \cf2 int\cf0  \cf3 count\cf0 =1;\
+\cf2 static\cf0  \cf2 int\cf0  \cf3 DFSdepth\cf0 =0;\
+\cf2 static\cf0  HashMap<String, Integer> \cf3 BFSdepth\cf0  = \cf2 new\cf0  HashMap<String, Integer>();\
+\cf2 public\cf0  \cf2 static\cf0  Person getPerson(String name)\{\
+	\cf4 //check if the person has already existed in list\cf0 \
+	\cf2 if\cf0 (\cf3 isExist\cf0 .containsKey(name))\{\
+		\cf2 return\cf0  \cf3 isExist\cf0 .get(name);\
+	\}\
+	\cf2 else\cf0 \{\
+		Person p = \cf2 new\cf0  Person(name);\
+		\cf3 isExist\cf0 .put(name, p);\
+		\cf2 return\cf0  p;\
+	\}\
+\} 	\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  readInputFile(String filename) \cf2 throws\cf0  IOException\{\cf4 //read input file\cf0 \
+	FileReader fin=\cf2 new\cf0  FileReader(filename);\
+	 \cf3 scanner\cf0  = \cf2 new\cf0  Scanner(fin);\
+	 \cf2 while\cf0 (\cf3 scanner\cf0 .hasNext())\{\
+		 String str=\cf3 scanner\cf0 .next(); \
+		 String[] data = str.split(\cf5 ","\cf0 );\
+         Person p1 = getPerson(data[0]);\
+         Person p2 = getPerson(data[1]);\
+         p1.\cf3 friends\cf0 .put(p2, Float.parseFloat(data[2]));\
+         p2.\cf3 friends\cf0 .put(p1, Float.parseFloat(data[2]));\
+	 \}\
+	 fin.close();\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  readTieFile(String filename) \cf2 throws\cf0  IOException\{\cf4 //read tie-breaking file\cf0 \
+	\cf3 WordOrder\cf0 .clear();\
+	\cf3 count\cf0 =1;\
+	FileReader fin=\cf2 new\cf0  FileReader(filename);\
+	\cf3 scanner1\cf0  = \cf2 new\cf0  Scanner(fin);\
+	\cf2 while\cf0 (\cf3 scanner1\cf0 .hasNext())\{\
+		String str=\cf3 scanner1\cf0 .next(); \
+		\cf3 WordOrder\cf0 .put(str, \cf3 count\cf0 );\
+		\cf3 count\cf0 ++;\
+	\}\
+	fin.close();\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  ArrayList<String> sortbyTieFile(HashMap<String, Integer> order, HashMap<Person, Float> friends)\{\cf4 //sort node's friends by alphabetic	\cf0 \
+	String[] nameStr = \cf2 new\cf0  String[friends.size()];\
+	\cf2 int\cf0  pos = 0;\
+	\ul Set\ulnone  set=friends.entrySet();\
+    \ul Iterator\ulnone  it=set.iterator();\
+    \cf2 while\cf0 (it.hasNext())\{\
+        \ul Map.Entry\ulnone  me=(\ul Map.Entry\ulnone )it.next();\
+        nameStr[pos++] = ((Person)me.getKey()).\cf3 name\cf0 ;\
+    \}\
+    \
+    \cf2 for\cf0 (\cf2 int\cf0  i = 0; i < pos-1; i++)\
+    \{\
+    	\cf2 for\cf0 (\cf2 int\cf0  j = i+1; j < pos; j++)\
+    	\{\
+    		\cf2 if\cf0 (order.get(nameStr[i]) > order.get(nameStr[j]))\
+    		\{\
+    			String temp = nameStr[i];\
+    			nameStr[i] = nameStr[j];\
+    			nameStr[j] = temp;\
+    		\}\
+    	\}\
+    \}\
+    \
+    ArrayList<String> nameList = \cf2 new\cf0  ArrayList<String>();\
+    \cf2 for\cf0 (\cf2 int\cf0  i = 0; i <  pos; i++)\
+    \{\
+    	nameList.add(nameStr[i]);\
+    \}\
+	\
+	\cf2 return\cf0  nameList;\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  ArrayList<String> sort(HashMap<String, Integer> order, HashMap<String, Person> input)\{\
+	String[] nameStr = \cf2 new\cf0  String[input.size()];\
+	\cf2 int\cf0  pos = 0;\
+	\ul Set\ulnone  set=input.entrySet();\
+    \ul Iterator\ulnone  it=set.iterator();\
+    \cf2 while\cf0 (it.hasNext())\{\
+        \ul Map.Entry\ulnone  me=(\ul Map.Entry\ulnone )it.next();\
+        nameStr[pos++] = (String)me.getKey();\
+    \}\
+    \
+    \cf2 for\cf0 (\cf2 int\cf0  i = 0; i < pos-1; i++)\
+    \{\
+    	\cf2 for\cf0 (\cf2 int\cf0  j = i+1; j < pos; j++)\
+    	\{\
+    		\cf2 if\cf0 (order.get(nameStr[i]) > order.get(nameStr[j]))\
+    		\{\
+    			String temp = nameStr[i];\
+    			nameStr[i] = nameStr[j];\
+    			nameStr[j] = temp;\
+    		\}\
+    	\}\
+    \}\
+    ArrayList<String> nameList = \cf2 new\cf0  ArrayList<String>();\
+    \cf2 for\cf0 (\cf2 int\cf0  i = 0; i <  pos; i++)\
+    \{\
+    	nameList.add(nameStr[i]);\
+    \}\
+	\
+	\cf2 return\cf0  nameList;\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  sortAll(HashMap<String, Person> personList)\{\cf4 //sort all node's friends by alphabetic\cf0 \
+	\ul Iterator\ulnone  iter = personList.entrySet().iterator();\
+	\cf2 while\cf0  (iter.hasNext()) \{\
+		\ul Map.Entry\ulnone  me=(\ul Map.Entry\ulnone )iter.next();\
+		((Person)me.getValue()).\cf3 friendList\cf0 =sortbyTieFile(\cf3 WordOrder\cf0 ,getPerson((String)me.getKey()).\cf3 friends\cf0 );\
+	\}\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  writeFile(ArrayList<String> input, String filename)\{\
+	\cf2 try\cf0 \{\
+		File f = \cf2 new\cf0  File(filename);\
+		  \cf2 if\cf0  (f.exists()) \{\
+		        System.\cf3 out\cf0 .println(\cf5 "File has existed!"\cf0 );\
+		       \} \cf2 else\cf0  \{\
+		        System.\cf3 out\cf0 .println(\cf5 "Creating file..."\cf0 );\
+		        \cf2 if\cf0  (f.createNewFile()) \{\
+		         System.\cf3 out\cf0 .println(\cf5 "File has been successfully created!"\cf0 );\
+		         FileWriter \ul writer\ulnone =\cf2 new\cf0  FileWriter(filename,\cf2 true\cf0 );\
+		         \
+		        \} \cf2 else\cf0  \{\
+		         System.\cf3 out\cf0 .println(\cf5 "Failure to create file."\cf0 );\
+		        \}\
+		       \}\
+	\}\cf2 catch\cf0  (IOException e)\{\
+		e.printStackTrace();\
+	\}\
+\}\
+\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  BFSsearch(HashMap<String, Person> graph, String startNode, String endNode, \cf2 int\cf0  example)\{\cf4 //BFS\cf0 \
+	\cf3 BFSdepth\cf0 .clear();\
+	\cf2 int\cf0  depth=0;\
+	Boolean isFind = \cf2 false\cf0 ;\
+	String[] path;\
+	ArrayList<String> record = \cf2 new\cf0  ArrayList<String>();\
+	HashMap<Person,Boolean> visited = \cf2 new\cf0  HashMap<Person,Boolean>();\
+	\ul Iterator\ulnone  iter = graph.entrySet().iterator();\
+	\cf2 while\cf0  (iter.hasNext()) \{\
+		\ul Map.Entry\ulnone  me=(\ul Map.Entry\ulnone )iter.next();\
+		visited.put(getPerson((String)me.getKey()), \cf2 false\cf0 );\
+	\}\
+	ArrayList<String> log = \cf2 new\cf0  ArrayList<String>();\
+	Person start = graph.get(startNode);\
+	Person goal = graph.get(endNode);\
+\
+	Queue<Person> q = \cf2 \ul \ulc2 new\cf0 \ulc0  ArrayDeque()\ulnone ;\
+	q.add(start);\
+	\cf3 BFSdepth\cf0 .put(startNode, depth);\
+	log.add(startNode);\
+	visited.put(start, \cf2 true\cf0 );\
+	\cf2 while\cf0 (!q.isEmpty()&&!isFind)\{\
+		Person top = q.poll();\
+\pard\pardeftab720
+\cf4 //		if(!visited.get(top)) \{depth++;\}\cf0 \
+		\cf2 for\cf0 (\cf2 int\cf0  i=0;i<top.\cf3 friendList\cf0 .size();i++)\{\
+			\cf2 if\cf0 (!visited.get(graph.get(top.\cf3 friendList\cf0 .get(i))))\{\
+\cf4 //				BFSdepth.put(top.friendList.get(i), depth);\cf0 \
+				log.add(top.\cf3 friendList\cf0 .get(i));\
+				visited.put(graph.get(top.\cf3 friendList\cf0 .get(i)), \cf2 true\cf0 );\
+				graph.get(top.\cf3 friendList\cf0 .get(i)).\cf3 parentNode\cf0 =top.\cf3 name\cf0 ;\
+				\cf3 BFSdepth\cf0 .put(top.\cf3 friendList\cf0 .get(i), \cf3 BFSdepth\cf0 .get(getPerson(top.\cf3 friendList\cf0 .get(i)).\cf3 parentNode\cf0 )+1);\
+				q.add(graph.get(top.\cf3 friendList\cf0 .get(i)));\
+				\cf2 if\cf0 (top.\cf3 friendList\cf0 .get(i).equals(endNode))\{\
+					isFind=\cf2 true\cf0 ;\
+				\}\
+			\}\
+		\}\
+	\}\
+	\
+  \cf2 if\cf0 (isFind)\{\
+	\cf2 int\cf0  pos=log.indexOf(endNode);\
+	Person p = goal;\
+	\cf2 while\cf0 (p.\cf3 parentNode\cf0 !=\cf2 null\cf0 )\{\
+		record.add(p.\cf3 parentNode\cf0 );\
+		p = graph.get(p.\cf3 parentNode\cf0 );\
+	\}\
+\
+	path = \cf2 new\cf0  String[record.size()+1];\
+	path[record.size()] = endNode;\
+	\cf2 for\cf0 (\cf2 int\cf0  i=record.size()-1;i>=0;i--)\{\
+		path[record.size()-i-1]=record.get(i);\
+	\}\
+	String filename=\cf2 null\cf0 ,filename_log=\cf2 null\cf0 ;\
+	\
+	\cf2 if\cf0 (example==1)\{\
+		filename=\cf5 "output1_path_t1.txt"\cf0 ;\
+		filename_log=\cf5 "output1_tlog_t1.txt"\cf0 ;\
+	\}\
+	\cf2 else\cf0  \cf2 if\cf0 (example==2)\{\
+		filename=\cf5 "output2_path_t1.txt"\cf0 ;\
+		filename_log=\cf5 "output2_tlog_t1.txt"\cf0 ;\
+	\}\
+	\cf2 try\cf0 \{\
+		File f = \cf2 new\cf0  File(filename_log);\
+		File f2 = \cf2 new\cf0  File(filename);\
+		  \cf2 if\cf0  (f.exists()&&f2.exists()) \{\
+		        System.\cf3 out\cf0 .println(\cf5 "File has existed!"\cf0 );\
+		       \} \cf2 else\cf0  \{\
+		        System.\cf3 out\cf0 .println(\cf5 "Creating file....."\cf0 );\
+		        \cf2 if\cf0  (f.createNewFile()&&f2.createNewFile()) \{\
+		         System.\cf3 out\cf0 .println(filename+\cf5 " has been successfully created"\cf0 );\
+		         System.\cf3 out\cf0 .println(filename_log+\cf5 " has been successfully created"\cf0 );\
+		         FileWriter writer2=\cf2 new\cf0  FileWriter(filename);\
+		         FileWriter writer=\cf2 new\cf0  FileWriter(filename_log);\
+		        	 \cf4 //write output file\cf0 \
+		        	 \cf2 for\cf0 (\cf2 int\cf0  i=0;i<path.\cf3 length\cf0 ;i++)\{\
+		        		 writer2.write(path[i]+\cf5 "\\n"\cf0 );\
+		        	 \}\
+		        	 writer2.close();\
+		        	\cf4 //write log file\cf0 \
+			         \cf2 float\cf0  \ul cur_cost\ulnone =0;\
+			         writer.write(\cf5 "name,depth,cost"\cf0 +\cf5 "\\n"\cf0 );\
+			         Person cur_person;\
+			         \cf2 float\cf0  cur_l;\
+			         \cf2 for\cf0 (\cf2 int\cf0  i=0;i<pos+1;i++)\{\
+			        	 cur_l=0;\
+			        	 cur_person=graph.get(log.get(i));\
+\cf4 //			        	 System.out.println("Now: "+cur_person.name);\cf0 \
+			        	 \cf2 while\cf0 (cur_person.\cf3 parentNode\cf0 !=\cf2 null\cf0 )\{\
+\cf4 //			        		 System.out.println(cur_person.name+" parent: "+ cur_person.parentNode);\cf0 \
+			        		 cur_l+=cur_person.\cf3 friends\cf0 .get(graph.get(cur_person.\cf3 parentNode\cf0 ));\
+			        		 cur_person=graph.get(cur_person.\cf3 parentNode\cf0 );\
+			        	 \}\
+			        	 graph.get(log.get(i)).\cf3 length\cf0 =cur_l;\
+\cf4 //			        	 System.out.println(graph.get(log.get(i)).length);\cf0 \
+			        	 writer.write(log.get(i)+\cf5 ","\cf0 +\cf3 BFSdepth\cf0 .get(log.get(i))+\cf5 ","\cf0 +graph.get(log.get(i)).\cf3 length\cf0 +\cf5 "\\n"\cf0 );\
+			         \}\
+			        	 writer.close();\
+		        \} \cf2 else\cf0  \{\
+		         System.\cf3 out\cf0 .println(\cf5 "Failure to create file."\cf0 );\
+		        \}\
+		       \}\
+	\}\cf2 catch\cf0  (IOException e)\{\
+		e.printStackTrace();\
+	\}\
+	\}\
+  \cf2 else\cf0 \{\
+	  System.\cf3 out\cf0 .println(\cf5 "There is no path between "\cf0 +startNode+\cf5 " and "\cf0 +endNode);\
+  \}\
+	\
+\}\
+\
+\pard\pardeftab720
+\cf2 public\cf0  \cf2 static\cf0  \cf2 boolean\cf0  DFSvisit(HashMap<String, Person> graph, HashMap<String,Boolean> visited, String startNode, String endNode, String[] path,\cf2 int\cf0  depth)\{\
+	\
+	\cf3 DFSdepth\cf0 =depth+1;\
+	\cf2 if\cf0 (visited.get(startNode))\
+		\cf2 return\cf0  \cf2 false\cf0 ;\
+	visited.put(startNode, \cf2 true\cf0 );\
+	path[depth]=startNode;\
+	\cf2 if\cf0 (startNode.equals(endNode) )\{\
+		\cf2 return\cf0  \cf2 true\cf0 ;\
+	\}\
+	\
+	\cf2 for\cf0 (\cf2 int\cf0  i=0;i<graph.get(startNode).\cf3 friendList\cf0 .size();i++)\
+		\cf2 if\cf0 (DFSvisit(graph, visited, graph.get(startNode).\cf3 friendList\cf0 .get(i), endNode, path, depth + 1))\{\
+			\cf2 return\cf0  \cf2 true\cf0 ;\
+		\}\
+	\cf2 return\cf0  \cf2 false\cf0 ;\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  DFSsearch(HashMap<String, Person> graph, String startNode, String endNode, \cf2 int\cf0  example)\{\cf4 //DFS\cf0 \
+    \cf3 DFSdepth\cf0 =0;\
+	String[] path = \cf2 new\cf0  String[graph.size()];\
+    String[] \ul noPath\ulnone  = \cf2 new\cf0  String[1];\
+	HashMap<String,Boolean> visited = \cf2 new\cf0  HashMap<String,Boolean>();\
+	\ul Iterator\ulnone  iter = graph.entrySet().iterator();\
+	\cf2 while\cf0  (iter.hasNext()) \{\
+		\ul Map.Entry\ulnone  me=(\ul Map.Entry\ulnone )iter.next();\
+		visited.put((String)me.getKey(), \cf2 false\cf0 );\
+	\}\
+    \
+	\cf2 if\cf0 (DFSvisit(graph, visited, startNode, endNode, path, \cf3 DFSdepth\cf0 ))\{	\
+		String filename=\cf2 null\cf0 ,filename_log=\cf2 null\cf0 ;\
+		\
+		\cf2 if\cf0 (example==1)\{\
+			filename=\cf5 "output1_path_t2.txt"\cf0 ;\
+			filename_log=\cf5 "output1_tlog_t2.txt"\cf0 ;\
+		\}\
+		\cf2 else\cf0  \cf2 if\cf0 (example==2)\{\
+			filename=\cf5 "output2_path_t2.txt"\cf0 ;\
+			filename_log=\cf5 "output2_tlog_t2.txt"\cf0 ;\
+		\}\
+		\
+		\cf2 try\cf0 \{\
+			File f = \cf2 new\cf0  File(filename_log);\
+			File f2 = \cf2 new\cf0  File(filename);\
+			  \cf2 if\cf0  (f.exists()&&f2.exists()) \{\
+			        System.\cf3 out\cf0 .println(\cf5 "File has existed!"\cf0 );\
+			       \} \cf2 else\cf0  \{\
+			        System.\cf3 out\cf0 .println(\cf5 "Creating file....."\cf0 );\
+			        \cf2 if\cf0  (f.createNewFile()&&f2.createNewFile()) \{\
+			         System.\cf3 out\cf0 .println(filename+\cf5 " has been successfully created"\cf0 );\
+			         System.\cf3 out\cf0 .println(filename_log+\cf5 " has been successfully created"\cf0 );\
+			         FileWriter writer2=\cf2 new\cf0  FileWriter(filename);\
+			         FileWriter writer=\cf2 new\cf0  FileWriter(filename_log);\
+			         \cf4 //write log file\cf0 \
+			         \cf2 float\cf0  cur_cost=0;\
+			         writer.write(\cf5 "name,depth,cost"\cf0 +\cf5 "\\n"\cf0 );\
+			         \cf2 int\cf0  j=0;\
+			         \cf2 for\cf0 (\cf2 int\cf0  i=0;i<path.\cf3 length\cf0 ;i++)\{\
+				          \cf2 if\cf0 (path[i]!=\cf2 null\cf0 )\{\
+				        	  j++;\
+				        	  \}\
+				          \}\
+			         \cf2 for\cf0 (\cf2 int\cf0  i=0;i<j;i++)\{		\
+			        	\cf2 if\cf0 (i==j-1)\{\
+			        		writer.write(path[i]+\cf5 ","\cf0 +i+\cf5 ","\cf0 +cur_cost+\cf5 "\\n"\cf0 );\
+			        	\}\cf2 else\cf0 \{\
+			        		 writer.write(path[i]+\cf5 ","\cf0 +i+\cf5 ","\cf0 +cur_cost+\cf5 "\\n"\cf0 );\
+				        	 cur_cost+=graph.get(path[i]).\cf3 friends\cf0 .get(graph.get(path[i+1]));\
+			        	\}			          \
+			         \}\
+			        	 writer.close();\
+			        	 \cf4 //write output file\cf0 \
+			        	 \cf2 for\cf0 (\cf2 int\cf0  i=0;i<path.\cf3 length\cf0 ;i++)\{\
+			        		 \cf2 if\cf0 (path[i]!=\cf2 null\cf0 )\{\
+			        		 writer2.write(path[i]+\cf5 "\\n"\cf0 );\
+			        		 \}\
+			        	 \}\
+			        	 writer2.close();\
+			        \} \cf2 else\cf0  \{\
+			         System.\cf3 out\cf0 .println(\cf5 "Failure to create file."\cf0 );\
+			        \}\
+			       \}\
+		\}\cf2 catch\cf0  (IOException e)\{\
+			e.printStackTrace();\
+		\}\
+	\}\
+	\cf2 else\cf0 \{\
+		System.\cf3 out\cf0 .println(\cf5 "There is no path between "\cf0 +startNode+\cf5 " and "\cf0 +endNode);\
+	\}\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  String UniformCostsearch(HashMap<String, Person> graph, Person startNode, Person endNode)\{\cf4 //Uniform-Cost search\cf0 \
+	\cf2 return\cf0  \cf2 null\cf0 ;\
+\}\
+\
+\cf2 public\cf0  \cf2 static\cf0  ArrayList<String> BFS(String startNode, HashMap<String, Person> graph, HashMap<String,Boolean> visited, ArrayList<String> path, \cf2 int\cf0  group)\{\
+	\cf2 int\cf0  depth=0;\
+\pard\pardeftab720
+\cf4 //	Boolean isFind = false;\cf0 \
+	Queue<String> q = \cf2 \ul \ulc2 new\cf0 \ulc0  ArrayDeque()\ulnone ;\
+	q.add(startNode); \cf4 //add into queue\cf0 \
+	\cf3 BFSdepth\cf0 .put(startNode, depth); \cf4 //record depth\cf0 \
+	visited.put(startNode, \cf2 true\cf0 ); \cf4 // mark node visited\cf0 \
+	graph.get(startNode).\cf3 group\cf0 =group; \cf4 //set group number\cf0 \
+	path.add(startNode); \cf4 //Add startNode into output\cf0 \
+	\cf2 while\cf0 (!q.isEmpty())\{\
+		String top = q.poll();\
+		String cur;\
+		\cf2 for\cf0 (\cf2 int\cf0  i=0; i<graph.get(top).\cf3 friendList\cf0 .size();i++)\{\
+			cur = graph.get(top).\cf3 friendList\cf0 .get(i);\
+			\cf2 if\cf0 (!visited.get(cur))\{\
+				visited.put(cur, \cf2 true\cf0 );\
+				graph.get(cur).\cf3 group\cf0 =group;\
+				path.add(cur);\
+				graph.get(cur).\cf3 parentNode\cf0 =top;\
+				\cf3 BFSdepth\cf0 .put(cur, \cf3 BFSdepth\cf0 .get(graph.get(cur).\cf3 parentNode\cf0 )+1);\
+				q.add(cur);\
+			\}\
+		\}\
+	\}\
+	\
+	\cf2 return\cf0  path;\
+\}\
+\
+\pard\pardeftab720
+\cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  findCommunity(HashMap<String, Person> graph, ArrayList<String> order, \cf2 int\cf0  example) \cf2 throws\cf0  IOException\{\cf4 //Find communities \cf0 \
+	\cf2 int\cf0  group=0;\
+	\cf3 BFSdepth\cf0 .clear();\
+	\ul ArrayList\ulnone  path = \cf2 new\cf0  ArrayList<String>();\
+	HashMap<String,Boolean> visited = \cf2 new\cf0  HashMap<String,Boolean>();\
+	\cf2 for\cf0 (\cf2 int\cf0  i=0;i<order.size();i++)\{\
+		visited.put(order.get(i), \cf2 false\cf0 );\
+	\}\
+	\cf2 for\cf0 (\cf2 int\cf0  i=0;i<order.size();i++)\{\
+		\cf2 if\cf0 (!visited.get(order.get(i)))\{\
+			group++;\
+			path=BFS(order.get(i),graph, visited, \ul path\ulnone , group);\
+		\}\
+	\}\
+	\
+	String filename=\cf2 null\cf0 ,filename_log=\cf2 null\cf0 ;\
+	\
+	\cf2 if\cf0 (example==1)\{\
+		filename=\cf5 "output1_cc_t4bfs.txt"\cf0 ;\
+		filename_log=\cf5 "output1_tlog_t4bfs.txt"\cf0 ;\
+	\}\
+	\cf2 else\cf0  \cf2 if\cf0 (example==2)\{\
+		filename=\cf5 "output2_cc_t4bfs.txt"\cf0 ;\
+		filename_log=\cf5 "output2_tlog_t4bfs.txt"\cf0 ;\
+	\}\
+	\
+	\cf2 try\cf0 \{\
+		File f = \cf2 new\cf0  File(filename_log);\
+		File f2 = \cf2 new\cf0  File(filename);\
+		  \cf2 if\cf0  (f.exists()&&f2.exists()) \{\
+		        System.\cf3 out\cf0 .println(\cf5 "File has existed!"\cf0 );\
+		       \} \cf2 else\cf0  \{\
+		        System.\cf3 out\cf0 .println(\cf5 "Creating file....."\cf0 );\
+		        \cf2 if\cf0  (f.createNewFile()&&f2.createNewFile()) \{\
+			     System.\cf3 out\cf0 .println(filename+\cf5 " has been successfully created"\cf0 );\
+			     System.\cf3 out\cf0 .println(filename_log+\cf5 " has been successfully created"\cf0 );\
+		         FileWriter writer2=\cf2 new\cf0  FileWriter(filename);\
+		         FileWriter writer=\cf2 new\cf0  FileWriter(filename_log);\
+		         \cf4 //write log file\cf0 \
+		         writer.write(\cf5 "name,depth,group"\cf0 +\cf5 "\\n"\cf0 );\
+		        	 \cf2 for\cf0 (\cf2 int\cf0  j=0;j<path.size();j++)\{\
+		        		 \cf2 if\cf0 (j==path.size()-1)\{\
+		        		 writer.write(path.get(j)+\cf5 ","\cf0 +\cf3 BFSdepth\cf0 .get(path.get(j))+\cf5 ","\cf0 +graph.get(path.get(j)).\cf3 group\cf0 +\cf5 "\\n"\cf0 );\
+		        		 writer.write(\cf5 "---------------------"\cf0 +\cf5 "\\n"\cf0 );\
+		        		 \}\
+		        		 \cf2 else\cf0 \{\
+		        			 \cf2 if\cf0 (graph.get(path.get(j+1)).\cf3 group\cf0 >graph.get(path.get(j)).\cf3 group\cf0 )\{\
+		        				writer.write(path.get(j)+\cf5 ","\cf0 +\cf3 BFSdepth\cf0 .get(path.get(j))+\cf5 ","\cf0 +graph.get(path.get(j)).\cf3 group\cf0 +\cf5 "\\n"\cf0 );\
+		        				writer.write(\cf5 "---------------------"\cf0 +\cf5 "\\n"\cf0 );\
+		        			 \}\
+		        			 \cf2 else\cf0 \{\
+		        				writer.write(path.get(j)+\cf5 ","\cf0 +\cf3 BFSdepth\cf0 .get(path.get(j))+\cf5 ","\cf0 +graph.get(path.get(j)).\cf3 group\cf0 +\cf5 "\\n"\cf0 ); \
+		        			 \}\
+		        		 \}		        		 \
+		        	 \}\
+		        	 writer.close();\
+		        	 \cf4 //write output file\cf0 \
+		        	 \cf2 for\cf0 (\cf2 int\cf0  j=0;j<path.size();j++)\{\
+		        		 \cf2 if\cf0 (j==path.size()-1)\{\
+		        			 writer2.write(path.get(j)+\cf5 "\\n"\cf0 );\
+		        		 \}\cf2 else\cf0 \{\
+		        			 \cf2 if\cf0 (graph.get(path.get(j+1)).\cf3 group\cf0 >graph.get(path.get(j)).\cf3 group\cf0 )\{\
+		        				 writer2.write(path.get(j)+\cf5 "\\n"\cf0 );\
+		        			 \}\cf2 else\cf0 \{\
+		        				 writer2.write(path.get(j)+\cf5 ","\cf0 );\
+		        			 \}\
+		        		 \}\
+		        	 \}\
+		        	 writer2.close();\
+		        \} \cf2 else\cf0  \{\
+		         System.\cf3 out\cf0 .println(\cf5 "Failure to create file."\cf0 );\
+		        \}\
+		       \}\
+	\}\cf2 catch\cf0  (IOException e)\{\
+		e.printStackTrace();\
+	\}\
+	\
+\}\
+\
+ \cf2 public\cf0  \cf2 static\cf0  \cf2 void\cf0  main(String args[]) \cf2 throws\cf0  IOException\{\cf4 //main function\cf0 \
+\
+	 readInputFile(\cf5 "input1.txt"\cf0 );\
+\
+	 readTieFile(\cf5 "tiebreaking1.txt"\cf0 );\
+	 	 \
+	 sortAll(\cf3 isExist\cf0 );\
+	 \
+	 System.\cf3 out\cf0 .println(\cf5 "BFS:"\cf0 );\
+	 BFSsearch(\cf3 isExist\cf0 , \cf5 "Alice"\cf0 ,\cf5 "Ben"\cf0 , 1);\
+\pard\pardeftab720
+\cf4 //\cf0 \
+\cf4 //	 System.out.println("DFS:");\cf0 \
+\cf4 //	 DFSsearch(isExist, "A", "B", 2);\cf0 \
+\cf4 //	 \cf0 \
+\cf4 //	 System.out.println("NameList:");\cf0 \
+\cf4 //	 ArrayList<String> name = new ArrayList<String>();\cf0 \
+\cf4 //	 name = sort(WordOrder,isExist);\cf0 \
+\cf4 //	 for(\ul int\ulnone  j=0;j<name.size();j++)\{\cf0 \
+\cf4 //		 System.out.println(name.get(j));\cf0 \
+\cf4 //	 \}\cf0 \
+	 \cf4 //findCommunity\cf0 \
+\cf4 //	 findCommunity(isExist, name, 1);\cf0 \
+\
+	 \
+ \}\
+\
+\}\
+\
+}

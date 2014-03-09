@@ -1,0 +1,9 @@
+name,depth,cost
+Alice,0,0.0
+Lena,1,95.0
+Dan,1,123.0
+Helen,2,167.0
+Ben,2,196.0
+Gil,3,234.0
+Emma,3,250.0
+Noah,4,271.0
